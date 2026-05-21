@@ -7,30 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, Check, Eye, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, X } from "lucide-react";
 import { templates } from "@/lib/templates";
+import { getTemplateComponent } from "@/lib/templateRegistry";
 import { cn } from "@/lib/utils";
-
-import { ResumeClassic } from "@/components/preview/ResumesClassic";
-import { ResumeModern } from "@/components/preview/ResumeModern";
-import { ResumeCreative } from "@/components/preview/ResumeCreative";
-import { ResumeExperience } from "@/components/preview/ResumeExperience";
-import { ResumeSingleColumn } from "@/components/preview/ResumeSingleColumn";
-import { ResumeExecutive } from "@/components/preview/ResumeExecutive";
-import { ResumeTechStack } from "@/components/preview/ResumeTechStack";
-import { ResumeTimeline } from "@/components/preview/ResumeTimeline";
-import { ResumeCompact } from "@/components/preview/ResumeCompact";
-import { ResumeElegant } from "@/components/preview/ResumeElegant";
-import { PortfolioSimple } from "@/components/preview/PortfolioSimple";
-import { PortfolioGrid } from "@/components/preview/PortfolioGrid";
-import { PortfolioBrand } from "@/components/preview/PortfolioBrand";
-import { PortfolioDark } from "@/components/preview/PortfolioDark";
-import { PortfolioMinimal } from "@/components/preview/PortfolioMinimal";
-import { PortfolioStudio } from "@/components/preview/PortfolioStudio";
-import { PortfolioNeon } from "@/components/preview/PortfolioNeon";
-import { PortfolioTerminal } from "@/components/preview/PortfolioTerminal";
-import { PortfolioWarmth } from "@/components/preview/PortfolioWarmth";
-import { PortfolioBlueprint } from "@/components/preview/PortfolioBlueprint";
 
 const stepTitles = [
   "What's your name?",
@@ -47,30 +27,37 @@ const stepTitles = [
   "Add links & review",
 ] as const;
 
-function getTemplateComponent(id?: string) {
-  switch (id) {
-    case "resume-classic": return <ResumeClassic />;
-    case "resume-modern": return <ResumeModern />;
-    case "resume-creative": return <ResumeCreative />;
-    case "resume-experience": return <ResumeExperience />;
-    case "resume-singlecolumn": return <ResumeSingleColumn />;
-    case "resume-executive": return <ResumeExecutive />;
-    case "resume-techstack": return <ResumeTechStack />;
-    case "resume-timeline": return <ResumeTimeline />;
-    case "resume-compact": return <ResumeCompact />;
-    case "resume-elegant": return <ResumeElegant />;
-    case "portfolio-simple": return <PortfolioSimple />;
-    case "portfolio-grid": return <PortfolioGrid />;
-    case "portfolio-brand": return <PortfolioBrand />;
-    case "portfolio-dark": return <PortfolioDark />;
-    case "portfolio-minimal": return <PortfolioMinimal />;
-    case "portfolio-studio": return <PortfolioStudio />;
-    case "portfolio-neon": return <PortfolioNeon />;
-    case "portfolio-terminal": return <PortfolioTerminal />;
-    case "portfolio-warmth": return <PortfolioWarmth />;
-    case "portfolio-blueprint": return <PortfolioBlueprint />;
-    default: return <ResumeClassic />;
-  }
+function PreviewPanel({ templateId }: { templateId: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.25);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      const s = Math.min((w / 816) * 1.0, 0.5);
+      setScale((prev) => (Math.abs(prev - s) > 0.001 ? s : prev));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} className="w-full overflow-hidden rounded-lg border bg-white shadow-sm">
+      <div className="flex justify-center">
+        <div
+          className="pointer-events-none shrink-0 leading-none"
+          style={{
+            width: "816px",
+            zoom: scale,
+          }}
+        >
+          {getTemplateComponent(templateId)}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Builder() {
@@ -365,19 +352,8 @@ export default function Builder() {
             </Button>
           </div>
 
-          {/* Mini preview */}
-          <div
-            className="overflow-hidden rounded-lg border bg-white shadow-sm"
-            style={{
-              transform: "scale(0.5)",
-              transformOrigin: "top left",
-              width: "200%",
-              height: "200%",
-              pointerEvents: "none",
-            }}
-          >
-            {getTemplateComponent(templateId)}
-          </div>
+          {/* Adaptive preview */}
+          <PreviewPanel templateId={templateId} />
         </div>
       </div>
 
@@ -401,17 +377,16 @@ export default function Builder() {
                 <p className="text-sm font-medium">Live Preview</p>
                 <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}><X className="h-4 w-4" /></Button>
               </div>
-              <div
-                className="overflow-hidden rounded-lg border bg-white shadow-lg"
-                style={{
-                  transform: "scale(0.45)",
-                  transformOrigin: "top left",
-                  width: "222%",
-                  height: "222%",
-                  pointerEvents: "none",
-                }}
-              >
-                {getTemplateComponent(templateId)}
+              <div className="flex items-start justify-center overflow-hidden rounded-lg border bg-white shadow-lg">
+                <div
+                  className="pointer-events-none shrink-0 leading-none"
+                  style={{
+                    width: "816px",
+                    zoom: 0.35,
+                  }}
+                >
+                  {getTemplateComponent(templateId)}
+                </div>
               </div>
             </div>
           </div>

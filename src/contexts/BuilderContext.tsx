@@ -17,8 +17,14 @@ interface BuilderContextType {
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 
-export function BuilderProvider({ children }: { children: ReactNode }) {
-  const [userData, setUserData] = useState<Partial<UserData>>({});
+export function BuilderProvider({
+  children,
+  initialData,
+}: {
+  children: ReactNode;
+  initialData?: Partial<UserData>;
+}) {
+  const [userData, setUserData] = useState<Partial<UserData>>(initialData ?? {});
   const [sectionVisibility, setSectionVisibility] = useState<SectionVisibility>(
     storage.getSectionVisibility()
   );
@@ -28,13 +34,14 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load data on mount
+  // Load data on mount (only when no initialData is provided)
   useEffect(() => {
+    if (initialData) return;
     const savedData = storage.getUserData();
     if (savedData) {
       setUserData(savedData);
     }
-  }, []);
+  }, [initialData]);
 
   const updateUserData = (data: Partial<UserData>) => {
     setIsSaving(true);

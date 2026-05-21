@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBuilder } from "@/contexts/BuilderContext";
 import { templates, getResumeTemplates, getPortfolioTemplates } from "@/lib/templates";
+import { getTemplateComponent } from "@/lib/templateRegistry";
 import { sampleUserData } from "@/lib/mockData";
 import { Check, Eye, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,27 +14,6 @@ import { TemplatePreviewModal } from "@/components/TemplatePreviewModal";
 import { BuilderProvider } from "@/contexts/BuilderContext";
 import { storage } from "@/lib/storage";
 import type { Template } from "@shared/schema";
-
-import { ResumeClassic } from "@/components/preview/ResumesClassic";
-import { ResumeModern } from "@/components/preview/ResumeModern";
-import { ResumeCreative } from "@/components/preview/ResumeCreative";
-import { ResumeExperience } from "@/components/preview/ResumeExperience";
-import { ResumeSingleColumn } from "@/components/preview/ResumeSingleColumn";
-import { ResumeExecutive } from "@/components/preview/ResumeExecutive";
-import { ResumeTechStack } from "@/components/preview/ResumeTechStack";
-import { ResumeTimeline } from "@/components/preview/ResumeTimeline";
-import { ResumeCompact } from "@/components/preview/ResumeCompact";
-import { ResumeElegant } from "@/components/preview/ResumeElegant";
-import { PortfolioSimple } from "@/components/preview/PortfolioSimple";
-import { PortfolioGrid } from "@/components/preview/PortfolioGrid";
-import { PortfolioBrand } from "@/components/preview/PortfolioBrand";
-import { PortfolioDark } from "@/components/preview/PortfolioDark";
-import { PortfolioMinimal } from "@/components/preview/PortfolioMinimal";
-import { PortfolioStudio } from "@/components/preview/PortfolioStudio";
-import { PortfolioNeon } from "@/components/preview/PortfolioNeon";
-import { PortfolioTerminal } from "@/components/preview/PortfolioTerminal";
-import { PortfolioWarmth } from "@/components/preview/PortfolioWarmth";
-import { PortfolioBlueprint } from "@/components/preview/PortfolioBlueprint";
 
 const atsScores: Record<string, number> = {
   "resume-classic": 95,
@@ -50,52 +30,110 @@ const atsScores: Record<string, number> = {
 
 const professions = ["all", "engineering", "design", "business", "healthcare", "law", "media", "creative", "executive", "architecture", "general"];
 
-function getTemplateComponent(id: string) {
-  switch (id) {
-    case "resume-classic": return <ResumeClassic />;
-    case "resume-modern": return <ResumeModern />;
-    case "resume-creative": return <ResumeCreative />;
-    case "resume-experience": return <ResumeExperience />;
-    case "resume-singlecolumn": return <ResumeSingleColumn />;
-    case "resume-executive": return <ResumeExecutive />;
-    case "resume-techstack": return <ResumeTechStack />;
-    case "resume-timeline": return <ResumeTimeline />;
-    case "resume-compact": return <ResumeCompact />;
-    case "resume-elegant": return <ResumeElegant />;
-    case "portfolio-simple": return <PortfolioSimple />;
-    case "portfolio-grid": return <PortfolioGrid />;
-    case "portfolio-brand": return <PortfolioBrand />;
-    case "portfolio-dark": return <PortfolioDark />;
-    case "portfolio-minimal": return <PortfolioMinimal />;
-    case "portfolio-studio": return <PortfolioStudio />;
-    case "portfolio-neon": return <PortfolioNeon />;
-    case "portfolio-terminal": return <PortfolioTerminal />;
-    case "portfolio-warmth": return <PortfolioWarmth />;
-    case "portfolio-blueprint": return <PortfolioBlueprint />;
-    default: return <ResumeClassic />;
-  }
-}
-
-function TemplateWithSampleData({ templateId }: { templateId: string }) {
-  const { updateUserData } = useBuilder();
+const PreviewCard = memo(function PreviewCard({
+  template,
+  isSelected,
+  onSelect,
+  onPreview,
+}: {
+  template: Template;
+  isSelected: boolean;
+  onSelect: () => void;
+  onPreview: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.22);
 
   useEffect(() => {
-    const current = storage.getUserData();
-    if (!current || !current.fullName) {
-      updateUserData(sampleUserData);
-    }
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      const s = Math.min((w / 816) * 0.92, 0.28);
+      setScale((prev) => (Math.abs(prev - s) > 0.001 ? s : prev));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
-  return getTemplateComponent(templateId);
-}
-
-function TemplateThumbnail({ templateId }: { templateId: string }) {
   return (
-    <BuilderProvider>
-      <TemplateWithSampleData templateId={templateId} />
-    </BuilderProvider>
+    <Card
+      className={cn(
+        "relative overflow-hidden transition-all cursor-pointer group",
+        isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
+      )}
+      data-testid={`card-template-${template.id}`}
+    >
+      <div
+        ref={containerRef}
+        className="aspect-[3/4] bg-white relative overflow-hidden border-b border-border cursor-pointer"
+        onClick={onSelect}
+      >
+        <div className="absolute inset-0 flex items-start justify-center overflow-hidden">
+          <div
+            className="pointer-events-none shrink-0 leading-none"
+            style={{
+              width: "816px",
+              zoom: scale,
+            }}
+          >
+            {getTemplateComponent(template.id)}
+          </div>
+        </div>
+        {isSelected && (
+          <div className="absolute top-3 right-3 h-8 w-8 rounded-full bg-primary flex items-center justify-center z-10 shadow-lg">
+            <Check className="h-4 w-4 text-primary-foreground" />
+          </div>
+        )}
+      </div>
+      <div className="p-4 space-y-3">
+        <div>
+          <h3 className="font-semibold text-foreground text-sm truncate">
+            {template.name}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+            {template.description}
+          </p>
+        </div>
+
+        {template.type === "resume" && atsScores[template.id] && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <div className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              atsScores[template.id] >= 95 ? "bg-green-500" :
+              atsScores[template.id] >= 88 ? "bg-yellow-500" : "bg-orange-400"
+            )} />
+            <span className="text-muted-foreground">
+              ATS: <span className="font-semibold text-foreground">{atsScores[template.id]}/100</span>
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-1.5">
+          {template.features.slice(0, 3).map((feature) => (
+            <Badge key={feature} variant="secondary" className="text-[10px] px-1.5 py-0">
+              {feature}
+            </Badge>
+          ))}
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview();
+          }}
+          data-testid={`button-preview-${template.id}`}
+        >
+          <Eye className="mr-1 h-3 w-3" />
+          Preview
+        </Button>
+      </div>
+    </Card>
   );
-}
+});
 
 export default function Templates() {
   const { userData, updateUserData } = useBuilder();
@@ -128,87 +166,6 @@ export default function Templates() {
     }
     return list;
   })();
-
-  const TemplateCard = ({ template }: { template: typeof templates[0] }) => {
-    const isSelected = selectedId === template.id;
-
-    return (
-      <Card
-        className={cn(
-          "relative overflow-hidden transition-all cursor-pointer group",
-          isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
-        )}
-        data-testid={`card-template-${template.id}`}
-      >
-        <div
-          className="aspect-[3/4] bg-white relative overflow-hidden border-b border-border cursor-pointer"
-          onClick={() => handleSelectTemplate(template.id)}
-        >
-          <div
-            style={{
-              transform: "scale(0.18)",
-              transformOrigin: "top left",
-              width: "555%",
-              height: "555%",
-              pointerEvents: "none",
-            }}
-          >
-            <TemplateThumbnail templateId={template.id} />
-          </div>
-          {isSelected && (
-            <div className="absolute top-3 right-3 h-8 w-8 rounded-full bg-primary flex items-center justify-center z-10 shadow-lg">
-              <Check className="h-4 w-4 text-primary-foreground" />
-            </div>
-          )}
-        </div>
-        <div className="p-4 space-y-3">
-          <div>
-            <h3 className="font-semibold text-foreground text-sm truncate">
-              {template.name}
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-              {template.description}
-            </p>
-          </div>
-
-          {template.type === "resume" && atsScores[template.id] && (
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                atsScores[template.id] >= 95 ? "bg-green-500" :
-                atsScores[template.id] >= 88 ? "bg-yellow-500" : "bg-orange-400"
-              )} />
-              <span className="text-muted-foreground">
-                ATS: <span className="font-semibold text-foreground">{atsScores[template.id]}/100</span>
-              </span>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-1.5">
-            {template.features.slice(0, 3).map((feature) => (
-              <Badge key={feature} variant="secondary" className="text-[10px] px-1.5 py-0">
-                {feature}
-              </Badge>
-            ))}
-          </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPreviewTemplate(template);
-            }}
-            data-testid={`button-preview-${template.id}`}
-          >
-            <Eye className="mr-1 h-3 w-3" />
-            Preview
-          </Button>
-        </div>
-      </Card>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -249,18 +206,26 @@ export default function Templates() {
           ))}
         </div>
 
-        {/* Template Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filteredTemplates.map((template) => (
-            <TemplateCard key={template.id} template={template} />
-          ))}
-        </div>
-
-        {filteredTemplates.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            No templates found for this filter.
+        {/* Template Grid — single BuilderProvider with sample data */}
+        <BuilderProvider initialData={sampleUserData}>
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filteredTemplates.map((template) => (
+              <PreviewCard
+                key={template.id}
+                template={template}
+                isSelected={selectedId === template.id}
+                onSelect={() => handleSelectTemplate(template.id)}
+                onPreview={() => setPreviewTemplate(template)}
+              />
+            ))}
           </div>
-        )}
+
+          {filteredTemplates.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              No templates found for this filter.
+            </div>
+          )}
+        </BuilderProvider>
       </div>
 
       {/* Sticky Bottom Bar */}

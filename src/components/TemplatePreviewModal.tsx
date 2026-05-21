@@ -1,27 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { sampleUserData } from "@/lib/mockData";
+import { getTemplateComponent } from "@/lib/templateRegistry";
 import type { Template } from "@shared/schema";
 
-// Template preview components
-import { ResumeClassic } from "@/components/preview/ResumesClassic";
-import { ResumeModern } from "@/components/preview/ResumeModern";
-import { ResumeCreative } from "@/components/preview/ResumeCreative";
-import { ResumeExperience } from "@/components/preview/ResumeExperience";
-import { ResumeSingleColumn } from "@/components/preview/ResumeSingleColumn";
-import { ResumeExecutive } from "@/components/preview/ResumeExecutive";
-import { ResumeTechStack } from "@/components/preview/ResumeTechStack";
-import { ResumeTimeline } from "@/components/preview/ResumeTimeline";
-import { ResumeCompact } from "@/components/preview/ResumeCompact";
-import { ResumeElegant } from "@/components/preview/ResumeElegant";
-import { PortfolioSimple } from "@/components/preview/PortfolioSimple";
-import { PortfolioGrid } from "@/components/preview/PortfolioGrid";
-import { PortfolioBrand } from "@/components/preview/PortfolioBrand";
-import { PortfolioDark } from "@/components/preview/PortfolioDark";
-import { PortfolioMinimal } from "@/components/preview/PortfolioMinimal";
-import { PortfolioStudio } from "@/components/preview/PortfolioStudio";
-import { PortfolioNeon } from "@/components/preview/PortfolioNeon";
-import { PortfolioTerminal } from "@/components/preview/PortfolioTerminal";
 import { BuilderProvider, useBuilder } from "@/contexts/BuilderContext";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -47,34 +29,18 @@ interface TemplatePreviewModalProps {
 }
 
 function TemplatePreviewContent({ template }: { template: Template }) {
-  const getPreviewComponent = () => {
-    switch (template.id) {
-      case "resume-classic": return <ResumeClassic />;
-      case "resume-modern": return <ResumeModern />;
-      case "resume-creative": return <ResumeCreative />;
-      case "resume-experience": return <ResumeExperience />;
-      case "resume-singlecolumn": return <ResumeSingleColumn />;
-      case "resume-executive": return <ResumeExecutive />;
-      case "resume-techstack": return <ResumeTechStack />;
-      case "resume-timeline": return <ResumeTimeline />;
-      case "resume-compact": return <ResumeCompact />;
-      case "resume-elegant": return <ResumeElegant />;
-      case "portfolio-simple": return <PortfolioSimple />;
-      case "portfolio-grid": return <PortfolioGrid />;
-      case "portfolio-brand": return <PortfolioBrand />;
-      case "portfolio-dark": return <PortfolioDark />;
-      case "portfolio-minimal": return <PortfolioMinimal />;
-      case "portfolio-studio": return <PortfolioStudio />;
-      case "portfolio-neon": return <PortfolioNeon />;
-      case "portfolio-terminal": return <PortfolioTerminal />;
-      default: return null;
-    }
-  };
-
   return (
     <div className="border border-border rounded-lg overflow-auto max-h-[60vh] bg-white">
-      <div style={{ transform: 'scale(0.6)', transformOrigin: 'top left', width: '166%' }}>
-        {getPreviewComponent()}
+      <div className="flex justify-center p-4">
+        <div
+          className="shrink-0 leading-none"
+          style={{
+            width: "816px",
+            zoom: 0.6,
+          }}
+        >
+          {getTemplateComponent(template.id)}
+        </div>
       </div>
     </div>
   );
@@ -131,7 +97,7 @@ export function TemplatePreviewModal({ open, onOpenChange, template }: TemplateP
         </DialogHeader>
 
         <div className="p-6 pt-4">
-          <BuilderProvider>
+          <BuilderProvider initialData={sampleUserData}>
             <TemplatePreviewContent template={template} />
           </BuilderProvider>
         </div>

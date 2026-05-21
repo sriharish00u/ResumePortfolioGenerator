@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useBuilder } from "@/contexts/BuilderContext";
 import { getTemplateById } from "@/lib/templates";
-import { Download, FileText, Code, ArrowLeft, ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react";
+import { getTemplateComponent } from "@/lib/templateRegistry";
+import { Download, FileText, Code, ArrowLeft, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -18,27 +19,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SectionOrder } from "@shared/schema";
-
-import { ResumeClassic } from "@/components/preview/ResumesClassic";
-import { ResumeModern } from "@/components/preview/ResumeModern";
-import { ResumeCreative } from "@/components/preview/ResumeCreative";
-import { ResumeExperience } from "@/components/preview/ResumeExperience";
-import { ResumeSingleColumn } from "@/components/preview/ResumeSingleColumn";
-import { ResumeExecutive } from "@/components/preview/ResumeExecutive";
-import { ResumeTechStack } from "@/components/preview/ResumeTechStack";
-import { ResumeTimeline } from "@/components/preview/ResumeTimeline";
-import { ResumeCompact } from "@/components/preview/ResumeCompact";
-import { ResumeElegant } from "@/components/preview/ResumeElegant";
-import { PortfolioSimple } from "@/components/preview/PortfolioSimple";
-import { PortfolioGrid } from "@/components/preview/PortfolioGrid";
-import { PortfolioBrand } from "@/components/preview/PortfolioBrand";
-import { PortfolioDark } from "@/components/preview/PortfolioDark";
-import { PortfolioMinimal } from "@/components/preview/PortfolioMinimal";
-import { PortfolioStudio } from "@/components/preview/PortfolioStudio";
-import { PortfolioNeon } from "@/components/preview/PortfolioNeon";
-import { PortfolioTerminal } from "@/components/preview/PortfolioTerminal";
-import { PortfolioWarmth } from "@/components/preview/PortfolioWarmth";
-import { PortfolioBlueprint } from "@/components/preview/PortfolioBlueprint";
 
 export default function Preview() {
   const { userData, sectionVisibility, updateSectionVisibility, sectionOrder, updateSectionOrder } = useBuilder();
@@ -63,32 +43,6 @@ export default function Preview() {
   }
 
   const isPortfolio = template.type === "portfolio";
-
-  const getTemplateComponent = () => {
-    switch (userData.selectedTemplate) {
-      case "resume-classic": return <ResumeClassic />;
-      case "resume-modern": return <ResumeModern />;
-      case "resume-creative": return <ResumeCreative />;
-      case "resume-experience": return <ResumeExperience />;
-      case "resume-singlecolumn": return <ResumeSingleColumn />;
-      case "resume-executive": return <ResumeExecutive />;
-      case "resume-techstack": return <ResumeTechStack />;
-      case "resume-timeline": return <ResumeTimeline />;
-      case "resume-compact": return <ResumeCompact />;
-      case "resume-elegant": return <ResumeElegant />;
-      case "portfolio-simple": return <PortfolioSimple />;
-      case "portfolio-grid": return <PortfolioGrid />;
-      case "portfolio-brand": return <PortfolioBrand />;
-      case "portfolio-dark": return <PortfolioDark />;
-      case "portfolio-minimal": return <PortfolioMinimal />;
-      case "portfolio-studio": return <PortfolioStudio />;
-      case "portfolio-neon": return <PortfolioNeon />;
-      case "portfolio-terminal": return <PortfolioTerminal />;
-      case "portfolio-warmth": return <PortfolioWarmth />;
-      case "portfolio-blueprint": return <PortfolioBlueprint />;
-      default: return isPortfolio ? <PortfolioSimple /> : <ResumeClassic />;
-    }
-  };
 
   const handleExportPDF = useCallback(async () => {
     setIsExporting(true);
@@ -307,19 +261,19 @@ img { max-width:100%; height:auto; }`;
 
                 <TabsContent value="desktop" className="mt-0">
                   <div className="border border-border rounded-lg overflow-auto max-h-[900px] bg-white">
-                    {getTemplateComponent()}
+                    {getTemplateComponent(userData.selectedTemplate)}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="tablet" className="mt-0">
                   <div className="max-w-[768px] mx-auto border border-border rounded-lg overflow-auto max-h-[900px] bg-white">
-                    {getTemplateComponent()}
+                    {getTemplateComponent(userData.selectedTemplate)}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="mobile" className="mt-0">
                   <div className="max-w-sm mx-auto border border-border rounded-lg overflow-auto max-h-[900px] bg-white">
-                    {getTemplateComponent()}
+                    {getTemplateComponent(userData.selectedTemplate)}
                   </div>
                 </TabsContent>
               </Tabs>
