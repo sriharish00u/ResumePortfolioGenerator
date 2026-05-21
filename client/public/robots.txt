@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /templates
+Disallow: /builder
+Disallow: /preview
+
+Sitemap: https://yoursite.com/sitemap.xml
+
+Crawl-delay: 10
